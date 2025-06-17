@@ -10,3 +10,4 @@ export const fetchStudentProgress = (id) => axios.get(`${API_URL}/${id}/progress
 export const getStudentById = (id) => axios.get(`${API_URL}/${id}`);
 export const getStudentContestData = (id, range) => axios.get(`${API_URL}/${id}/contest-history?range=${range}`);
 export const getStudentProblemData = (id, range = 30) => axios.get(`${API_URL}/${id}/problem-solving-stats?range=${range}`);
+export const toggleStudentReminder = async (id) => { await axios.put(`${API_URL}/${id}/toggle-reminder`)};

@@ -6,6 +6,7 @@ import StudentProgressModal from '../components/StudentProgressModal';
 import Papa from 'papaparse';
 import { Plus, Download, Pencil, Trash2, Info } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { toggleStudentReminder } from '../api/api';
 
 function StudentTablePage() {
     const [students, setStudents] = useState([]);
@@ -81,6 +82,19 @@ function StudentTablePage() {
         }
     };
 
+    const isInactive = (student) => {
+        if (!student.solvedProblems || student.solvedProblems.length === 0) return true;
+
+        const latestProblem = student.solvedProblems.reduce((latest, current) => {
+            return new Date(current.solvedDate) > new Date(latest.solvedDate) ? current : latest;
+        });
+
+        const daysSinceSolved = (new Date() - new Date(latestProblem.solvedDate)) / (1000 * 60 * 60 * 24);
+
+        return daysSinceSolved > 7;
+    };
+
+
     const handleDownloadCSV = () => {
         const csvData = students.map(student => ({
             Name: student.name,
@@ -90,6 +104,8 @@ function StudentTablePage() {
             'Current Rating': student.currentRating,
             'Max Rating': student.maxRating,
             'Last Updated': new Date(student.lastUpdated).toLocaleString(),
+            'Reminders Sent': student.remindersSent,
+            'Auto Reminder Status': (student.autoReminderEnabled ? 'ENABLED' : 'DISABLED'),
         }));
 
         const csv = Papa.unparse(csvData);
@@ -102,6 +118,15 @@ function StudentTablePage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const toggleReminder = async (id) => {
+        try {
+            await toggleStudentReminder(id);
+            fetchStudents(); // Refresh data
+        } catch (err) {
+            console.error('Error toggling reminder:', err);
+        }
     };
 
     return (
@@ -141,12 +166,15 @@ function StudentTablePage() {
                             <th className="py-3 px-2 md:px-4 border">CF Handle</th>
                             <th className="py-3 px-2 md:px-4 border">Current Rating</th>
                             <th className="py-3 px-2 md:px-4 border">Max Rating</th>
+                            <th className="py-3 px-2 md:px-4 border">Last Updated</th>
+                            <th className="py-3 px-2 md:px-4 border">Reminders Sent</th>
+                            <th className="py-3 px-2 md:px-4 border">Auto Reminder</th>
                             <th className="py-3 px-2 md:px-4 border">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {students.map(student => (
-                            <tr key={student._id} className="hover:bg-gray-100 text-sm md:text-base"
+                            <tr key={student._id} className={`hover:bg-gray-100 text-sm md:text-base ${isInactive(student) ? 'bg-red-100' : ''}`}
                                 onClick={() => window.open(`/student/${student._id}`, '_blank')}
                                 >
                                 <td className="py-2 px-2 md:px-4 border">{student.name}</td>
@@ -155,6 +183,16 @@ function StudentTablePage() {
                                 <td className="py-2 px-2 md:px-4 border">{student.cfHandle}</td>
                                 <td className="py-2 px-2 md:px-4 border">{student.currentRating}</td>
                                 <td className="py-2 px-2 md:px-4 border">{student.maxRating}</td>
+                                <td className="py-2 px-2 md:px-4 border">{new Date(student.lastUpdated).toLocaleString()}</td>
+                                <td className="py-2 px-2 md:px-4 border">{student.remindersSent}</td>
+                                <td className="py-2 px-2 md:px-4 border" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => toggleReminder(student._id)}
+                                        className={`px-2 py-1 rounded ${student.autoReminderEnabled ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}`}
+                                    >
+                                        {student.autoReminderEnabled ? 'Enabled' : 'Disabled'}
+                                    </button>
+                                </td>
                                 <td className="py-2 px-2 md:px-4 border flex space-x-2 justify-center" onClick={(e) => e.stopPropagation()}>
                                     <button
                                         onClick={() => { setSelectedStudent(student); setShowModal(true); }}

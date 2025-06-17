@@ -94,7 +94,7 @@ function ProblemSolvingStats({ id }) {
                     ) : (
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart
-                                data={Object.entries(stats.solvedPerRatingBucket).map(([rating, count]) => ({ rating, count }))}
+                                data={Object.entries(stats.solvedPerRatingBucket).map(([rating, count]) => ({ rating: rating === '0' ? 'Non Rated' : rating, count }))}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="rating" label={{ value: 'Rating', position: 'insideBottom', offset: -5 }} />
