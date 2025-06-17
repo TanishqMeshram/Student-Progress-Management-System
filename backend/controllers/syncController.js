@@ -3,22 +3,82 @@ const Student = require('../models/Student');
 
 // ------------------ CODEFORCES DATA SYNC ------------------
 
+// const fetchCFData = async (handle) => {
+//     try {
+//         const userInfo = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
+//         const contestHistory = await axios.get(`https://codeforces.com/api/user.rating?handle=${handle}`);
+//         const submissions = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=10000`);
+        
+//         console.log("Contest History: " , contestHistory.data);
+//         return {
+//             userRating: userInfo.data.result[0],
+//             contestHistory: contestHistory.data.result,
+//             submissions: submissions.data.result
+//         };
+//     } catch (err) {
+//         console.error('Error fetching CF data for handle', handle, ':', err.message);
+//         return null;
+//     }
+// };
+
 const fetchCFData = async (handle) => {
     try {
         const userInfo = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
         const contestHistory = await axios.get(`https://codeforces.com/api/user.rating?handle=${handle}`);
         const submissions = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=10000`);
 
+        const allSubmissions = submissions.data.result;
+
+        // Maps: contestId -> set of attempted and solved problems
+        const attemptedProblemsMap = {};
+        const solvedProblemsMap = {};
+
+        allSubmissions.forEach(submission => {
+            if (submission.contestId) {
+                const contestId = submission.contestId;
+                const problemIndex = submission.problem.index;
+
+                // Track attempted problems
+                if (!attemptedProblemsMap[contestId]) {
+                    attemptedProblemsMap[contestId] = new Set();
+                }
+                attemptedProblemsMap[contestId].add(problemIndex);
+
+                // Track solved problems
+                if (submission.verdict === "OK") {
+                    if (!solvedProblemsMap[contestId]) {
+                        solvedProblemsMap[contestId] = new Set();
+                    }
+                    solvedProblemsMap[contestId].add(problemIndex);
+                }
+            }
+        });
+
+        // Build enriched contest history with solved & unsolved counts
+        const UpdatedContestHistory = contestHistory.data.result.map(contest => {
+            const contestId = contest.contestId;
+
+            const solvedCount = solvedProblemsMap[contestId] ? solvedProblemsMap[contestId].size : 0;
+            const attemptedCount = attemptedProblemsMap[contestId] ? attemptedProblemsMap[contestId].size : 0;
+            const unsolvedCount = attemptedCount - solvedCount;
+
+            return {
+                ...contest,
+                problemsUnsolved: unsolvedCount
+            };
+        });
+
         return {
             userRating: userInfo.data.result[0],
-            contestHistory: contestHistory.data.result,
-            submissions: submissions.data.result
+            contestHistory: UpdatedContestHistory,
+            submissions: allSubmissions
         };
     } catch (err) {
         console.error('Error fetching CF data for handle', handle, ':', err.message);
         return null;
     }
 };
+
 
 const syncStudentDataForStudent = async (handle) => {
     const student = await Student.findOne({ cfHandle: handle });
@@ -38,7 +98,7 @@ const syncStudentDataForStudent = async (handle) => {
         rank: contest.rank,
         oldRating: contest.oldRating,
         newRating: contest.newRating,
-        problemsUnsolved: 0 // Placeholder
+        problemsUnsolved: contest.problemsUnsolved
     }));
 
     const solvedProblems = {};

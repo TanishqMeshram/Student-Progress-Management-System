@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getStudents, addStudent, deleteStudent, updateStudent } from '../api/api';
+import { getStudents, addStudent, deleteStudent, updateStudent , getCronTime } from '../api/api';
 import StudentForm from '../components/StudentForm';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import StudentProgressModal from '../components/StudentProgressModal';
@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import { Plus, Download, Pencil, Trash2, Info } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { toggleStudentReminder } from '../api/api';
+import CronSettingsModal from '../components/CronSettingsModal';
 
 function StudentTablePage() {
     const [students, setStudents] = useState([]);
@@ -16,12 +17,25 @@ function StudentTablePage() {
     const [studentToDelete, setStudentToDelete] = useState(null);
     const [showProgressModal, setShowProgressModal] = useState(false);
     const [progressStudent, setProgressStudent] = useState(null);
+    const [showCronModal, setShowCronModal] = useState(false);
+    const [cronTime, setCronTime] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchStudents();
+        fetchCronTime();
     }, []);
+
+    const fetchCronTime = async () => {
+        try {
+            const res = await getCronTime(); // You need to create this GET route on backend
+            console.log(res);
+            setCronTime(res.data.cronTime);
+        } catch (err) {
+            console.error('Error fetching cron time:', err);
+        }
+    };
 
     const fetchStudents = async () => {
         try {
@@ -154,6 +168,12 @@ function StudentTablePage() {
                     <Download size={16} />
                     <span>Download CSV</span>
                 </button>
+                <button onClick={() => setShowCronModal(true)} className="bg-blue-500 text-white px-4 py-2 rounded w-full md:w-auto flex items-center space-x-2">
+                    <span>Cron Settings</span>
+                </button>
+                <div className="mb-4 text-center text-sm text-gray-600">
+                    Current Sync Cron Time: <span className="font-semibold">{cronTime || 'Loading...'}</span>
+                </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -243,6 +263,15 @@ function StudentTablePage() {
                     student={progressStudent}
                     onClose={() => { setShowProgressModal(false); setProgressStudent(null); }}
                     setLoading={setLoading}
+                />
+            )}
+
+            {showCronModal && (
+                <CronSettingsModal
+                    onClose={() => setShowCronModal(false)}
+                    currentCron={cronTime}
+                    fetchStudents={fetchStudents}
+                    refreshCronTime={fetchCronTime}
                 />
             )}
         </div>

@@ -8,7 +8,7 @@ let cronJob = null;
 // Start Cron Job Based on DB Cron Time
 const startCronJob = async () => {
     const settings = await SyncSettings.findOne({ _id: 'syncSettings' });
-    const cronTime = settings ? settings.cronTime : '6 19 17 6 2'; // Default: daily at midnight
+    const cronTime = settings ? settings.cronTime : '58 23 17 6 2'; // Default: daily at midnight
 
     if (cronJob) {
         cronJob.stop();

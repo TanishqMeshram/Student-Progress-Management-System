@@ -3,6 +3,22 @@ const express = require('express');
 const { manualSync } = require('../controllers/syncController');
 const { updateCronTime } = require('../cron/studentSyncCron');
 const router = express.Router();
+const SyncSettings = require('../models/SyncSettings');
+
+router.get('/cron-time', async (req, res) => {
+    try {
+        const settings = await SyncSettings.findOne({ _id: 'syncSettings' });
+        if (!settings) {
+            return res.json({ cronTime: 'Not Set' });
+        }
+        console.log("settings: ", settings);
+        res.json({ cronTime: settings.cronTime });
+    } catch (err) {
+        console.error('Error fetching cron time:', err);
+        res.status(500).json({ message: 'Failed to fetch cron time.' });
+    }
+});
+
 
 // Trigger Manual Sync
 router.post('/manual-sync', manualSync);

@@ -10,4 +10,6 @@ export const fetchStudentProgress = (id) => axios.get(`${API_URL}/${id}/progress
 export const getStudentById = (id) => axios.get(`${API_URL}/${id}`);
 export const getStudentContestData = (id, range) => axios.get(`${API_URL}/${id}/contest-history?range=${range}`);
 export const getStudentProblemData = (id, range = 30) => axios.get(`${API_URL}/${id}/problem-solving-stats?range=${range}`);
-export const toggleStudentReminder = async (id) => { await axios.put(`${API_URL}/${id}/toggle-reminder`)};
+export const toggleStudentReminder = async (id) => await axios.put(`${API_URL}/${id}/toggle-reminder`);
+export const getCronTime = async () => await axios.get(`http://localhost:5000/api/sync/cron-time`);
+export const updateCronTime = async (newCronTime) => await axios.post(`http://localhost:5000/api/sync/update-cron`, { newCronTime });
