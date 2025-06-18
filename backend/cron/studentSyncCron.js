@@ -1,6 +1,6 @@
 // cron/studentSyncCron.js
 const cron = require('node-cron');
-const { syncStudentData } = require('../controllers/syncController');
+const { syncStudentData } = require('../utils/syncStudentData');
 const SyncSettings = require('../models/SyncSettings');
 
 let cronJob = null;
@@ -23,7 +23,7 @@ const startCronJob = async () => {
 };
 
 // Update Cron Time Dynamically
-const updateCronTime = async (newCronTime) => {
+const updateCronJobTime = async (newCronTime) => {
     await SyncSettings.findOneAndUpdate(
         { _id: 'syncSettings' },
         { cronTime: newCronTime },
@@ -32,4 +32,7 @@ const updateCronTime = async (newCronTime) => {
     await startCronJob(); // Restart with updated cron time
 };
 
-module.exports = { startCronJob, updateCronTime };
+module.exports = {
+    startCronJob,
+    updateCronJobTime
+};

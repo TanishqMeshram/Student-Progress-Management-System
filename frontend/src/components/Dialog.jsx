@@ -1,11 +1,9 @@
-import React from 'react';
-
 export function Dialog({ open, onOpenChange, children }) {
     if (!open) return null;
 
     return (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-50" onClick={onOpenChange}>
-            <div className="bg-white rounded-lg p-6 w-[90%] md:w-[60%] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-lg p-6 w-[90%] md:w-[62%]  overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {children}
             </div>
         </div>

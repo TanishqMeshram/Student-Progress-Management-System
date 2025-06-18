@@ -1,11 +1,8 @@
 const Student = require('../models/Student');
-const axios = require('axios');
 const moment = require('moment');
 const dataSync = require('./syncController');
 
-// ------------------ CRUD OPERATIONS ------------------
-
-exports.getAllStudents = async (req, res) => {
+const getAllStudents = async (req, res) => {
     try {
         const students = await Student.find();
         res.json(students);
@@ -14,8 +11,19 @@ exports.getAllStudents = async (req, res) => {
     }
 };
 
-exports.addStudent = async (req, res) => {
+const addStudent = async (req, res) => {
     try {
+        // Check for existing email or cfHandle
+        const existing = await Student.findOne({
+            $or: [
+                { email: req.body.email },
+                { cfHandle: req.body.cfHandle }
+            ]
+        });
+        if (existing) {
+            return res.status(400).json({ message: 'A student with this email or Codeforces handle already exists.' });
+        }
+
         // Validate the Codeforces handle
         const cfData = await dataSync.fetchCFData(req.body.cfHandle);
         if (!cfData) {
@@ -38,14 +46,40 @@ exports.addStudent = async (req, res) => {
     }
 };
 
-exports.updateStudent = async (req, res) => {
+const updateStudent = async (req, res) => {
     try {
-        const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        // Find the student to update
+        const student = await Student.findById(req.params.id);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Check if email or cfHandle is being changed to one that already exists (excluding this student)
+        const existing = await Student.findOne({
+            $and: [
+                { _id: { $ne: req.params.id } },
+                {
+                    $or: [
+                        { email: req.body.email },
+                        { cfHandle: req.body.cfHandle }
+                    ]
+                }
+            ]
+        });
+        if (existing) {
+            return res.status(400).json({ message: 'A student with this email or Codeforces handle already exists.' });
+        }
+
+        // Update the student
+        Object.assign(student, req.body);
+        student.lastUpdated = new Date();
 
         // If the Codeforces handle is updated, fetch the new data immediately
         if (req.body.cfHandle) {
             await dataSync.syncStudentDataForStudent(req.body.cfHandle);
         }
+
+        await student.save();
 
         res.json(student);
     } catch (error) {
@@ -53,7 +87,7 @@ exports.updateStudent = async (req, res) => {
     }
 };
 
-exports.deleteStudent = async (req, res) => {
+const deleteStudent = async (req, res) => {
     try {
         await Student.findByIdAndDelete(req.params.id);
         res.json({ message: 'Student deleted' });
@@ -62,7 +96,7 @@ exports.deleteStudent = async (req, res) => {
     }
 };
 
-exports.getStudentProgress = async (req, res) => {
+const getStudentProgress = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -111,10 +145,9 @@ exports.getStudentProgress = async (req, res) => {
     }
 };
 
-exports.getStudentById = async (req, res) => {
+const getStudentById = async (req, res) => {
     try {
         const { id } = req.params;
-        // console.log(req.params)
         const student = await Student.findById(id);
         if (!student) return res.status(404).json({ error: 'Student not found' });
 
@@ -125,7 +158,7 @@ exports.getStudentById = async (req, res) => {
     }
 };
 
-exports.getContestHistory = async (req, res) => {
+const getContestHistory = async (req, res) => {
     try {
         const { id } = req.params;
         let { range = 90 } = req.query;
@@ -144,7 +177,7 @@ exports.getContestHistory = async (req, res) => {
     }
 };
 
-exports.getProblemSolvingStats = async (req, res) => {
+const getProblemSolvingStats = async (req, res) => {
     try {
         const { id } = req.params;
         const { range = 30 } = req.query;
@@ -212,4 +245,37 @@ exports.getProblemSolvingStats = async (req, res) => {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
+};
+
+const toggleReminder = async (req, res) => {
+    try {
+        const student = await Student.findById(req.params.id);
+
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
+    
+        const updatedStudent = await Student.findByIdAndUpdate(
+            req.params.id,
+            { autoReminderEnabled: !student.autoReminderEnabled },
+            { new: true }
+        );
+    
+        res.status(200).json(updatedStudent);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update reminder setting.' });
+    }
+}
+
+module.exports = {
+    getAllStudents,
+    addStudent,
+    updateStudent,
+    deleteStudent,
+    getStudentProgress,
+    getStudentById,
+    getContestHistory,
+    getProblemSolvingStats,
+    toggleReminder
 };
