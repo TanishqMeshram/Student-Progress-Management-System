@@ -65,12 +65,14 @@ npm install
 ```
 #### Create a .env file in the backend directory ####
 
+```bash
 MONGO_URI=mongodb://localhost:27017/student-progress
 PORT=5000
 EMAIL_USER=your_gmail@gmail.com
 EMAIL_PASS=your_gmail_app_password
 STUDENT_SYNC_CRON=0 2 * * *
 EMAIL_CRON=0 8 * * 1
+```
 
 ```bash
 nodemon server.js
@@ -83,7 +85,9 @@ npm install
 ```
 #### Create a .env file in the frontend directory ####
 
+```bash
 VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 ```bash
 npm run dev
