@@ -4,15 +4,7 @@ frontend/node_modules/
 
 # Environment files
 backend/.env
-
-# Build folders
-frontend/dist/
-
-# Logs
-*.log
-
-# System files
-.DS_Store
+frontend/.env
 
 # Optional: Vite cache
 .vite
