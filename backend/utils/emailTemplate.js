@@ -1,3 +1,8 @@
+/**
+ * Generates a styled HTML email for inactive students.
+ * @param {Object} student - Student object
+ * @returns {string} HTML email content
+ */
 const generateEmail = (student) => {
     return `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%); padding: 32px 0; min-height: 100vh;">

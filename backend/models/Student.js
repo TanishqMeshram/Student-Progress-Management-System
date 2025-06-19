@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
+/**
+ * Student Schema
+ * Represents a student and their Codeforces data.
+ */
 const StudentSchema = new mongoose.Schema({
-    name: String,
-    email: String,
+    name: { type: String, required: true },
+    email: { type: String, required: true },
     phone: String,
-    cfHandle: String,
+    cfHandle: { type: String, required: true },
     currentRating: Number,
     maxRating: Number,
     lastUpdated: Date,

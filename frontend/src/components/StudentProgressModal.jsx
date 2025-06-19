@@ -6,9 +6,16 @@ import 'react-calendar-heatmap/dist/styles.css';
 import { fetchStudentProgress } from '../api/api';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { extractErrorMessage } from '../utils/errorUtils';
 
+/**
+ * Modal to display a student's Codeforces rating and submission progress.
+ * @param {Object} student - Student object
+ * @param {Function} onClose - Close modal handler
+ * @param {Function} setLoading - Set loading state
+ */
 function StudentProgressModal({ student, onClose, setLoading }) {
     const [ratingData, setRatingData] = useState([]);
     const [submissionData, setSubmissionData] = useState([]);
@@ -17,25 +24,37 @@ function StudentProgressModal({ student, onClose, setLoading }) {
         if (student) {
             loadProgressData();
         }
-
         return () => {
             setLoading(false);
         };
         // eslint-disable-next-line
     }, [student]);
 
+    /**
+     * Loads rating and submission history for the student.
+     */
     const loadProgressData = async () => {
         try {
             setLoading(true);
             const progress = await fetchStudentProgress(student.cfHandle);
-            setRatingData(progress.data.ratingHistory);
-            setSubmissionData(progress.data.submissionHistory);
-        } catch (error) {
-            console.error('Error fetching student progress:', error);
-            toast.error( error?.response?.data?.message || error?.response?.data?.error || error.message || 'Failed to fetch student progress. Please try again later.');
+            setRatingData(progress.data.data.ratingHistory);
+            setSubmissionData(progress.data.data.submissionHistory);
+        } catch (err) {
+            const msg = extractErrorMessage(err);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
+    };
+
+    // Returns a color for the heatmap cell based on submission count and theme.
+    const isDark = document.documentElement.classList.contains('dark');
+    const getHeatmapColor = (count) => {
+        if (!count) return isDark ? "#1e293b" : "#ebedf0";
+        if (count >= 10) return isDark ? "#2563eb" : "#005bb5";
+        if (count >= 5) return isDark ? "#3b82f6" : "#338fd4";
+        if (count >= 3) return isDark ? "#60a5fa" : "#66b3e1";
+        return isDark ? "#bae6fd" : "#cce4f6";
     };
 
     return (
@@ -45,19 +64,18 @@ function StudentProgressModal({ student, onClose, setLoading }) {
             exit={{ scale: 0.7, opacity: 0 }}
             className="w-full max-w-4xl"
         >
-            <ToastContainer position="top-right" autoClose={2500} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
             <Dialog open={true} onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto bg-gradient-to-br from-blue-50 to-green-50 border border-blue-200 shadow-2xl rounded-2xl p-2 sm:p-4 md:p-6 relative">
+                <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto bg-gradient-to-br from-blue-50 to-green-50 dark:from-slate-900 dark:to-slate-800 border border-blue-200 dark:border-slate-700 shadow-2xl rounded-2xl p-2 sm:p-4 md:p-6 relative">
                     {/* Close button */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-blue-400 hover:text-blue-600 transition cursor-pointer rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="absolute top-4 right-4 text-blue-400 dark:text-cyan-200 hover:text-blue-600 dark:hover:text-cyan-400 transition cursor-pointer rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
                         aria-label="Close"
                     >
                         <X size={28} />
                     </button>
                     <DialogHeader>
-                        <DialogTitle className="text-xl sm:text-2xl md:text-3xl text-blue-600 font-extrabold mb-4 drop-shadow-lg text-center">
+                        <DialogTitle className="text-xl sm:text-2xl md:text-3xl text-blue-600 dark:text-cyan-200 font-extrabold mb-4 drop-shadow-lg text-center">
                             {student.name}&apos;s Codeforces Progress
                         </DialogTitle>
                     </DialogHeader>
@@ -65,7 +83,7 @@ function StudentProgressModal({ student, onClose, setLoading }) {
                     <div className="space-y-8">
                         {/* Rating Graph */}
                         <div>
-                            <h2 className="text-base sm:text-lg font-semibold text-blue-700 mb-2 text-center sm:text-left">Rating Progress</h2>
+                            <h2 className="text-base sm:text-lg font-semibold text-blue-700 dark:text-cyan-200 mb-2 text-center sm:text-left">Rating Progress</h2>
                             {ratingData.length > 0 ? (
                                 <div className="w-full h-[220px] sm:h-[300px]">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -79,13 +97,13 @@ function StudentProgressModal({ student, onClose, setLoading }) {
                                     </ResponsiveContainer>
                                 </div>
                             ) : (
-                                <div className="text-blue-400 bg-blue-50 rounded p-4 text-center">No rating data available.</div>
+                                <div className="text-blue-400 dark:text-cyan-200 bg-blue-50 dark:bg-slate-800 rounded p-4 text-center">No rating data available.</div>
                             )}
                         </div>
 
                         {/* Submission Heatmap */}
                         <div>
-                            <h2 className="text-base sm:text-lg font-semibold text-blue-700 mb-2 text-center sm:text-left">Submission Heatmap</h2>
+                            <h2 className="text-base sm:text-lg font-semibold text-blue-700 dark:text-cyan-200 mb-2 text-center sm:text-left">Submission Heatmap</h2>
                             {submissionData.length > 0 ? (
                                 <>
                                     <div className="w-full overflow-x-auto flex justify-center">
@@ -94,14 +112,10 @@ function StudentProgressModal({ student, onClose, setLoading }) {
                                                 startDate={new Date(new Date().setFullYear(new Date().getFullYear() - 1))}
                                                 endDate={new Date()}
                                                 values={submissionData}
-                                                classForValue={() => 'color-empty'}
+                                                classForValue={v => ''}
                                                 tooltipDataAttrs={value => ({ 'data-tip': `${value.date}: ${value.count} submissions` })}
                                                 transformDayElement={(element, value) => {
-                                                    let fillColor = '#ebedf0';
-                                                    if (value && value.count >= 10) fillColor = '#005bb5';
-                                                    else if (value && value.count >= 5) fillColor = '#338fd4';
-                                                    else if (value && value.count >= 3) fillColor = '#66b3e1';
-                                                    else if (value && value.count >= 1) fillColor = '#cce4f6';
+                                                    let fillColor = getHeatmapColor(value && value.count);
                                                     return React.cloneElement(element, { style: { fill: fillColor } });
                                                 }}
                                             />
@@ -110,25 +124,25 @@ function StudentProgressModal({ student, onClose, setLoading }) {
                                     {/* Color Legend */}
                                     <div className="flex flex-wrap items-center gap-4 mt-4 justify-center">
                                         <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 rounded bg-[#cce4f6] border border-blue-200"></div>
-                                            <span className="text-xs text-blue-500">1-2</span>
+                                            <div className="w-4 h-4 rounded bg-[#cce4f6] dark:bg-[#bae6fd] border border-blue-200 dark:border-slate-700"></div>
+                                            <span className="text-xs text-blue-500 dark:text-cyan-200">1-2</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 rounded bg-[#66b3e1] border border-blue-200"></div>
-                                            <span className="text-xs text-blue-500">3-4</span>
+                                            <div className="w-4 h-4 rounded bg-[#66b3e1] dark:bg-[#60a5fa] border border-blue-200 dark:border-slate-700"></div>
+                                            <span className="text-xs text-blue-500 dark:text-cyan-200">3-4</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 rounded bg-[#338fd4] border border-blue-200"></div>
-                                            <span className="text-xs text-blue-500">5-9</span>
+                                            <div className="w-4 h-4 rounded bg-[#338fd4] dark:bg-[#3b82f6] border border-blue-200 dark:border-slate-700"></div>
+                                            <span className="text-xs text-blue-500 dark:text-cyan-200">5-9</span>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 rounded bg-[#005bb5] border border-blue-200"></div>
-                                            <span className="text-xs text-blue-500">10+</span>
+                                            <div className="w-4 h-4 rounded bg-[#005bb5] dark:bg-[#2563eb] border border-blue-200 dark:border-slate-700"></div>
+                                            <span className="text-xs text-blue-500 dark:text-cyan-200">10+</span>
                                         </div>
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-blue-400 bg-blue-50 rounded p-4 text-center">No submission data available.</div>
+                                <div className="text-blue-400 dark:text-cyan-200 bg-blue-50 dark:bg-slate-800 rounded p-4 text-center">No submission data available.</div>
                             )}
                         </div>
                     </div>

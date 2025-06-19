@@ -1,6 +1,18 @@
+/**
+ * Utilities for syncing student data from Codeforces.
+ * - fetchCFData: Fetches user info, contest history, and submissions from Codeforces API.
+ * - syncStudentDataForStudent: Updates a single student's data in the DB.
+ * - syncStudentData: Updates all students' data in the DB.
+ */
+
 const Student = require('../models/Student');
 const axios = require('axios');
 
+/**
+ * Fetch Codeforces data for a given handle.
+ * @param {string} handle - Codeforces handle
+ * @returns {Object|null} { userRating, contestHistory, submissions }
+ */
 const fetchCFData = async (handle) => {
     try {
         const userInfo = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
@@ -9,7 +21,7 @@ const fetchCFData = async (handle) => {
 
         const allSubmissions = submissions.data.result;
 
-        // Maps: contestId -> set of attempted and solved problems
+        // Track attempted and solved problems per contest
         const attemptedProblemsMap = {};
         const solvedProblemsMap = {};
 
@@ -18,13 +30,11 @@ const fetchCFData = async (handle) => {
                 const contestId = submission.contestId;
                 const problemIndex = submission.problem.index;
 
-                // Track attempted problems
                 if (!attemptedProblemsMap[contestId]) {
                     attemptedProblemsMap[contestId] = new Set();
                 }
                 attemptedProblemsMap[contestId].add(problemIndex);
 
-                // Track solved problems
                 if (submission.verdict === "OK") {
                     if (!solvedProblemsMap[contestId]) {
                         solvedProblemsMap[contestId] = new Set();
@@ -34,10 +44,9 @@ const fetchCFData = async (handle) => {
             }
         });
 
-        // Build enriched contest history with solved & unsolved counts
+        // Add unsolved count to contest history
         const UpdatedContestHistory = contestHistory.data.result.map(contest => {
             const contestId = contest.contestId;
-
             const solvedCount = solvedProblemsMap[contestId] ? solvedProblemsMap[contestId].size : 0;
             const attemptedCount = attemptedProblemsMap[contestId] ? attemptedProblemsMap[contestId].size : 0;
             const unsolvedCount = attemptedCount - solvedCount;
@@ -59,6 +68,10 @@ const fetchCFData = async (handle) => {
     }
 };
 
+/**
+ * Sync a single student's data from Codeforces and update in DB.
+ * @param {string} handle - Codeforces handle
+ */
 const syncStudentDataForStudent = async (handle) => {
     const student = await Student.findOne({ cfHandle: handle });
     if (!student) return;
@@ -80,6 +93,7 @@ const syncStudentDataForStudent = async (handle) => {
         problemsUnsolved: contest.problemsUnsolved
     }));
 
+    // Only keep unique solved problems (by problemId)
     const solvedProblems = {};
     cfData.submissions.forEach(sub => {
         if (sub.verdict === 'OK') {
@@ -97,6 +111,7 @@ const syncStudentDataForStudent = async (handle) => {
 
     student.solvedProblems = Object.values(solvedProblems);
 
+    // Update last activity date
     const lastSubmission = cfData.submissions[0];
     student.lastActivityDate = lastSubmission ? new Date(lastSubmission.creationTimeSeconds * 1000) : null;
 
@@ -105,6 +120,9 @@ const syncStudentDataForStudent = async (handle) => {
     await student.save();
 };
 
+/**
+ * Sync all students' data from Codeforces.
+ */
 const syncStudentData = async () => {
     const students = await Student.find();
     for (let student of students) {

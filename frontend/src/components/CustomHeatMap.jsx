@@ -1,18 +1,24 @@
-function getColor(count) {
-    if (!count) return "#e5e7eb";
-    if (count >= 10) return "#1e40af";
-    if (count >= 5) return "#2563eb";
-    if (count >= 3) return "#3b82f6";
-    return "#60a5fa";
+/**
+ * Returns a color for a heatmap cell based on submission count and theme.
+ */
+function getColor(count, isDark) {
+    if (!count) return isDark ? "#1e293b" : "#e5e7eb";
+    if (count >= 10) return isDark ? "#2563eb" : "#1e40af";
+    if (count >= 5) return isDark ? "#3b82f6" : "#2563eb";
+    if (count >= 3) return isDark ? "#60a5fa" : "#3b82f6";
+    return isDark ? "#bae6fd" : "#60a5fa";
 }
 
+/**
+ * CustomHeatmap
+ * Renders a calendar-style heatmap for submission activity.
+ */
 export default function CustomHeatmap({ data, startDate, endDate, onCellClick }) {
-    // data: [{ date: 'YYYY-MM-DD', count: N }, ...]
-    // Build a map for quick lookup
+    const isDark = document.documentElement.classList.contains('dark');
     const dataMap = {};
     data.forEach(d => { dataMap[d.date] = d.count; });
 
-    // Build days array
+    // Build days array for the range
     const days = [];
     let current = new Date(startDate);
     const last = new Date(endDate);
@@ -22,7 +28,7 @@ export default function CustomHeatmap({ data, startDate, endDate, onCellClick })
         current.setDate(current.getDate() + 1);
     }
 
-    // Group by week (7 days per row)
+    // Group days into weeks
     const weeks = [];
     for (let i = 0; i < days.length; i += 7) {
         weeks.push(days.slice(i, i + 7));
@@ -40,10 +46,10 @@ export default function CustomHeatmap({ data, startDate, endDate, onCellClick })
                                 style={{
                                     width: 18,
                                     height: 18,
-                                    background: getColor(day.count),
+                                    background: getColor(day.count, isDark),
                                     borderRadius: 4,
                                     cursor: "pointer",
-                                    border: "1px solid #e5e7eb",
+                                    border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
                                 }}
                                 onClick={() => onCellClick && onCellClick(day)}
                             />

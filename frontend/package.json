@@ -12,6 +12,8 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
     "axios": "^1.9.0",
+    "cron-parser": "^5.3.0",
+    "cronstrue": "^2.61.0",
     "framer-motion": "^12.18.1",
     "lucide-react": "^0.515.0",
     "papaparse": "^5.5.3",

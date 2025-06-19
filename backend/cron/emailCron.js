@@ -1,8 +1,16 @@
+/**
+ * Cron job for sending inactivity reminder emails to students.
+ * Runs at a schedule defined by EMAIL_CRON env or default.
+ */
+
 const Student = require('../models/Student');
 const sendEmail = require('../utils/sendEmail');
 const generateEmail = require('../utils/emailTemplate');
 const cron = require('node-cron');
 
+/**
+ * Check for inactive students and send reminder emails.
+ */
 const checkInactiveStudents = async () => {
     try {
         const sevenDaysAgo = new Date();
@@ -15,11 +23,11 @@ const checkInactiveStudents = async () => {
 
         for (const student of inactiveStudents) {
             const emailContent = generateEmail(student);
-            await sendEmail(
-                student.email,
-                'Time to get back to problem solving!',
-                emailContent
-            );
+            await sendEmail({
+                to: student.email,
+                subject: 'Time to get back to problem solving!',
+                html: emailContent
+            });
 
             student.remindersSent += 1;
             await student.save();
@@ -31,15 +39,16 @@ const checkInactiveStudents = async () => {
     }
 };
 
-cron.schedule('0 22 18 6 3', () => {
-    console.log('Running inactivity check...');
-    checkInactiveStudents();
-});
+const emailCronTime = process.env.EMAIL_CRON || '0 8 * * 1';
 
-// ┌───────────── minute (0 - 59)
-// │ ┌───────────── hour (0 - 23)
-// │ │ ┌───────────── day of the month (1 - 31)
-// │ │ │ ┌───────────── month (1 - 12)
-// │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday)
-// │ │ │ │ │
-// * * * * * command to execute
+/**
+ * Start the email reminder cron job.
+ */
+const startEmailCron = () => {
+    cron.schedule(emailCronTime, async () => {
+        console.log('Running inactivity check...');
+        await checkInactiveStudents();
+    });
+};
+
+module.exports = { startEmailCron };

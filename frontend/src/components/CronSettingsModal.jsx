@@ -1,65 +1,21 @@
-// components/CronSettingsModal.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { updateCronTime } from '../api/api';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { motion } from 'framer-motion';
+import { getReadableCron } from '../utils/cronUtils';
+import { extractErrorMessage } from '../utils/errorUtils';
 
-// Helper to convert cron to readable text
-function getReadableCron(minute, hour, day, month, weekday) {
-    // If all fields are numbers (not '*'), show exact date and time
-    const isNumber = (val) => !isNaN(val) && val !== '*';
-    if (isNumber(minute) && isNumber(hour) && isNumber(day) && isNumber(month)) {
-        // Weekday is optional for display
-        const months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const dayNum = parseInt(day, 10);
-        const monthNum = parseInt(month, 10) - 1; // cron months are 1-based
-        const hourNum = parseInt(hour, 10);
-        const minuteNum = parseInt(minute, 10);
-
-        // Format time
-        const ampm = hourNum >= 12 ? 'pm' : 'am';
-        const hour12 = hourNum % 12 === 0 ? 12 : hourNum % 12;
-        const minuteStr = minuteNum.toString().padStart(2, '0');
-
-        // Format day suffix
-        const getDaySuffix = (d) => {
-            if (d >= 11 && d <= 13) return 'th';
-            switch (d % 10) {
-                case 1: return 'st';
-                case 2: return 'nd';
-                case 3: return 'rd';
-                default: return 'th';
-            }
-        };
-
-        return `Day: ${dayNum}${getDaySuffix(dayNum)} ${months[monthNum]}, Time: ${hour12}:${minuteStr} ${ampm}`;
-    }
-
-    // Fallbacks for common patterns
-    if (minute === '0' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
-        return 'Every hour';
-    }
-    if (minute === '0' && hour !== '*' && day === '*' && month === '*' && weekday === '*') {
-        return `Every day at ${hour.padStart(2, '0')}:00`;
-    }
-    if (minute === '0' && hour !== '*' && day === '*' && month === '*' && weekday !== '*') {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const dayName = days[parseInt(weekday, 10)] || `Day ${weekday}`;
-        return `Every ${dayName} at ${hour.padStart(2, '0')}:00`;
-    }
-    if (minute === '0' && hour !== '*' && day !== '*' && month === '*' && weekday === '*') {
-        return `Every month on day ${day} at ${hour.padStart(2, '0')}:00`;
-    }
-    return 'Custom schedule';
-}
+/**
+ * Modal for updating the cron schedule for student data sync.
+ * @param {Function} onClose - Close modal handler
+ * @param {string} currentCron - Current cron string
+ * @param {Function} fetchStudents - Refresh students after update
+ * @param {Function} refreshCronTime - Refresh cron time after update
+ */
 
 function onlyInt(val, min, max) {
-    // Allow empty string for controlled input, otherwise restrict to integer in range
     if (val === '') return '';
     const num = Number(val);
     if (!Number.isInteger(num)) return '';
@@ -86,9 +42,7 @@ function CronSettingsModal({ onClose, currentCron, fetchStudents, refreshCronTim
                 onClose();
             }, 100);
         } catch (err) {
-            console.error('Error updating cron time:', err);
-            const msg = err?.response?.data?.message || err?.response?.data?.error || err.message || 'Failed to update cron time. Please try again later.';
-            setError(msg);
+            const msg = extractErrorMessage(err);
             toast.error(msg);
         }
     };
@@ -111,11 +65,10 @@ function CronSettingsModal({ onClose, currentCron, fetchStudents, refreshCronTim
             setHour('0');
             setDay('*');
             setMonth('*');
-            setWeekday('1'); // Monday
+            setWeekday('1');
         }
     };
 
-    // Handlers to allow only integer input or '*'
     const handleMinute = (e) => {
         const val = e.target.value;
         setMinute(val === '*' ? '*' : onlyInt(val, 0, 59));
@@ -138,79 +91,78 @@ function CronSettingsModal({ onClose, currentCron, fetchStudents, refreshCronTim
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-gradient-to-br from-blue-50 to-green-50/80 z-50">
-            <ToastContainer position="top-right" autoClose={2500} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+        <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-gradient-to-br from-blue-50 to-green-50/80 dark:from-slate-900 dark:to-slate-800/80 z-50">
             <motion.div
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.7, opacity: 0 }}
-                className="bg-white border border-blue-200 p-8 rounded-2xl shadow-2xl w-full max-w-md relative"
+                className="bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 p-8 rounded-2xl shadow-2xl w-full max-w-md relative"
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-blue-400 hover:text-blue-600 transition cursor-pointer rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="absolute top-4 right-4 text-blue-400 dark:text-cyan-200 hover:text-blue-600 dark:hover:text-cyan-400 transition cursor-pointer rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
                     aria-label="Close"
                 >
                     <X size={24} />
                 </button>
-                <h2 className="text-2xl font-bold text-blue-600 mb-6">Update Cron Time</h2>
+                <h2 className="text-2xl font-bold text-blue-600 dark:text-cyan-200 mb-6">Update Cron Time</h2>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block mb-1 font-medium text-blue-700">Minute</label>
+                        <label className="block mb-1 font-medium text-blue-700 dark:text-cyan-200">Minute</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9*]*"
-                            className="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            className="w-full border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-400 transition bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             value={minute}
                             onChange={handleMinute}
                             placeholder="0-59 or *"
                         />
                     </div>
                     <div>
-                        <label className="block mb-1 font-medium text-blue-700">Hour</label>
+                        <label className="block mb-1 font-medium text-blue-700 dark:text-cyan-200">Hour</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9*]*"
-                            className="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            className="w-full border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-400 transition bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             value={hour}
                             onChange={handleHour}
                             placeholder="0-23 or *"
                         />
                     </div>
                     <div>
-                        <label className="block mb-1 font-medium text-blue-700">Day of Month</label>
+                        <label className="block mb-1 font-medium text-blue-700 dark:text-cyan-200">Day of Month</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9*]*"
-                            className="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            className="w-full border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-400 transition bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             value={day}
                             onChange={handleDay}
                             placeholder="1-31 or *"
                         />
                     </div>
                     <div>
-                        <label className="block mb-1 font-medium text-blue-700">Month</label>
+                        <label className="block mb-1 font-medium text-blue-700 dark:text-cyan-200">Month</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9*]*"
-                            className="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            className="w-full border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-400 transition bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             value={month}
                             onChange={handleMonth}
                             placeholder="1-12 or *"
                         />
                     </div>
                     <div>
-                        <label className="block mb-1 font-medium text-blue-700">Day of Week</label>
+                        <label className="block mb-1 font-medium text-blue-700 dark:text-cyan-200">Day of Week</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9*]*"
-                            className="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            className="w-full border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-400 transition bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                             value={weekday}
                             onChange={handleWeekday}
                             placeholder="0-6 (Sun-Sat) or *"
@@ -221,25 +173,25 @@ function CronSettingsModal({ onClose, currentCron, fetchStudents, refreshCronTim
                 <div className="mb-4 flex flex-wrap gap-2">
                     <button
                         onClick={() => applyPreset('daily')}
-                        className="bg-gradient-to-r from-blue-100 to-green-100 hover:from-blue-200 hover:to-green-200 text-blue-700 px-3 py-1 rounded-lg transition"
+                        className="bg-gradient-to-r from-blue-100 to-green-100 dark:from-slate-700 dark:to-green-900 hover:from-blue-200 hover:to-green-200 dark:hover:from-slate-600 dark:hover:to-green-800 text-blue-700 dark:text-cyan-200 px-3 py-1 rounded-lg transition cursor-pointer"
                     >
                         Every Day
                     </button>
                     <button
                         onClick={() => applyPreset('hourly')}
-                        className="bg-gradient-to-r from-blue-100 to-green-100 hover:from-blue-200 hover:to-green-200 text-blue-700 px-3 py-1 rounded-lg transition"
+                        className="bg-gradient-to-r from-blue-100 to-green-100 dark:from-slate-700 dark:to-green-900 hover:from-blue-200 hover:to-green-200 dark:hover:from-slate-600 dark:hover:to-green-800 text-blue-700 dark:text-cyan-200 px-3 py-1 rounded-lg transition cursor-pointer"
                     >
                         Every Hour
                     </button>
                     <button
                         onClick={() => applyPreset('weekly')}
-                        className="bg-gradient-to-r from-blue-100 to-green-100 hover:from-blue-200 hover:to-green-200 text-blue-700 px-3 py-1 rounded-lg transition"
+                        className="bg-gradient-to-r from-blue-100 to-green-100 dark:from-slate-700 dark:to-green-900 hover:from-blue-200 hover:to-green-200 dark:hover:from-slate-600 dark:hover:to-green-800 text-blue-700 dark:text-cyan-200 px-3 py-1 rounded-lg transition cursor-pointer"
                     >
                         Every Week
                     </button>
                 </div>
 
-                <div className="mb-4 text-sm text-blue-600">
+                <div className="mb-4 text-sm text-blue-600 dark:text-cyan-200">
                     <strong>Schedule Preview:</strong>{' '}
                     <span className="font-semibold">
                         {getReadableCron(minute, hour, day, month, weekday)}
@@ -248,13 +200,13 @@ function CronSettingsModal({ onClose, currentCron, fetchStudents, refreshCronTim
                 <div className="flex justify-end gap-4 pt-2">
                     <button
                         onClick={handleUpdateCron}
-                        className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-5 py-2 rounded-lg shadow transition"
+                        className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-5 py-2 rounded-lg shadow transition cursor-pointer"
                     >
                         Update
                     </button>
                     <button
                         onClick={onClose}
-                        className="bg-gray-400 hover:bg-gray-500 text-white px-5 py-2 rounded-lg transition"
+                        className="bg-gray-400 dark:bg-slate-700 hover:bg-gray-500 dark:hover:bg-slate-600 text-white px-5 py-2 rounded-lg transition cursor-pointer"
                     >
                         Cancel
                     </button>
