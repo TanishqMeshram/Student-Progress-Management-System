@@ -129,35 +129,36 @@ npm run dev
 
 ---
 
-## File Structure
+## 📂 File Structure
 
+```text
 student-progress-management-system/
-│
 ├── backend/
-│ ├── controllers/ # Route logic and API handlers
-│ ├── cron/ # Cron job schedulers and sync logic
-│ ├── middlewares/ # Custom middleware functions
-│ ├── models/ # Mongoose schemas and models
-│ ├── routes/ # API route definitions
-│ ├── utils/ # Utility functions (e.g., email sender, validators)
-│ ├── .env # Backend environment variables
-│ ├── package.json # Backend dependencies and scripts
-│ └── server.js # Backend entry point
+│   ├── controllers/       # Route logic and API handlers
+│   ├── cron/              # Cron job schedulers and sync logic
+│   ├── middlewares/       # Custom middleware functions
+│   ├── models/            # Mongoose schemas and models
+│   ├── routes/            # API route definitions
+│   ├── utils/             # Utility functions (e.g., email sender, validators)
+│   ├── .env               # Backend environment variables
+│   ├── package.json       # Backend dependencies and scripts
+│   └── server.js          # Backend entry point
 │
 └── frontend/
-├── src/
-│ ├── api/ # API service calls (Axios instances)
-│ ├── assets/ # Static files like images, logos
-│ ├── components/ # Reusable UI components
-│ ├── context/ # Global state management (React Context)
-│ ├── pages/ # Frontend page components
-│ ├── utils/ # Helper functions (e.g., CSV export, formatting)
-│ ├── App.jsx # Main application component
-│ ├── main.jsx # React entry point
-│ └── index.css # Global styles
-├── .env # Frontend environment variables
-├── package.json # Frontend dependencies and scripts
-└── vite.config.js # Vite configuration
+    ├── src/
+    │   ├── api/           # API service calls (Axios instances)
+    │   ├── assets/        # Static files like images, logos
+    │   ├── components/    # Reusable UI components
+    │   ├── context/       # Global state management (React Context)
+    │   ├── pages/         # Frontend page components
+    │   ├── utils/         # Helper functions (e.g., CSV export, formatting)
+    │   ├── App.jsx        # Main application component
+    │   ├── main.jsx       # React entry point
+    │   └── index.css      # Global styles
+    ├── .env               # Frontend environment variables
+    ├── package.json       # Frontend dependencies and scripts
+    └── vite.config.js     # Vite configuration
+```
 
 ## 🎯 Final Notes
 
