@@ -74,6 +74,7 @@ STUDENT_SYNC_CRON=0 2 * * *
 EMAIL_CRON=0 8 * * 1
 ```
 
+Run backend server:
 ```bash
 nodemon server.js
 ```
@@ -89,6 +90,7 @@ npm install
 VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
+Run frontend server:
 ```bash
 npm run dev
 ```
@@ -157,3 +159,9 @@ student-progress-management-system/
     ├── package.json
     └── vite.config.js
 
+## 🎯 Final Notes
+
+Thank you for exploring the **Student Progress Management System**.  
+This project is designed to make student performance tracking seamless, insightful, and actionable. Contributions, feature requests, and improvements are always welcome!
+
+Happy Coding! 🚀
