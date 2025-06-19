@@ -55,7 +55,7 @@ The **Student Progress Management System** is a full-stack MERN application desi
 
 ```bash
 git clone https://github.com/TanishqMeshram/Student-Progress-Management-System.git
-cd student-progress-management-system 
+cd Student-Progress-Management-System 
 ```
 
 ### 2. **Backend Setup**
