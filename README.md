@@ -160,6 +160,10 @@ student-progress-management-system/
     └── vite.config.js     # Vite configuration
 ```
 
+Video Demo Link:
+```
+https://drive.google.com/file/d/19tfVJGG8A8XL1Azq6hZJkP1mqQUet1qj/view?usp=sharing
+```
 ## 🎯 Final Notes
 
 Thank you for exploring the **Student Progress Management System**.  
