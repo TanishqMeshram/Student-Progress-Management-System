@@ -139,7 +139,7 @@ student-progress-management-system/
 │   ├── middlewares/       # Custom middleware functions
 │   ├── models/            # Mongoose schemas and models
 │   ├── routes/            # API route definitions
-│   ├── utils/             # Utility functions (e.g., email sender, validators)
+│   ├── utils/             # Utility functions (e.g., email sender)
 │   ├── .env               # Backend environment variables
 │   ├── package.json       # Backend dependencies and scripts
 │   └── server.js          # Backend entry point
@@ -149,9 +149,9 @@ student-progress-management-system/
     │   ├── api/           # API service calls (Axios instances)
     │   ├── assets/        # Static files like images, logos
     │   ├── components/    # Reusable UI components
-    │   ├── context/       # Global state management (React Context)
+    │   ├── context/       # Global state management (React Theme Context)
     │   ├── pages/         # Frontend page components
-    │   ├── utils/         # Helper functions (e.g., CSV export, formatting)
+    │   ├── utils/         # Helper functions (e.g., cronUtils , errorUtils)
     │   ├── App.jsx        # Main application component
     │   ├── main.jsx       # React entry point
     │   └── index.css      # Global styles
