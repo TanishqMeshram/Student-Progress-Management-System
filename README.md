@@ -73,6 +73,8 @@ EMAIL_PASS=your_gmail_app_password
 STUDENT_SYNC_CRON=0 2 * * *
 EMAIL_CRON=0 8 * * 1
 ```
+Note: 
+There are 2 different cronjobs first one is to sync the codeforces data and the other one is to check inactive status. Codeforces sync cron time can be changed on frontend manually but the inactivity check cron time can only be set on enviroment variable.
 
 Run backend server:
 ```bash
